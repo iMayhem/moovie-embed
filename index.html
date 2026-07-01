@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moovie Embed Player</title>
+    <title>Moovie Embed — Standalone Resolver & Player Docs</title>
     
-    <!-- Premium Typography & Stylesheets -->
+    <!-- Premium Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -48,28 +48,28 @@
             font-family: var(--font-sans);
             background: var(--bg);
             color: var(--bone);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* ── Player Container ── */
+        /* ── Fullscreen Embed Player Mode ── */
         .embed-stage {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #000;
+            display: none;
             overflow: hidden;
+        }
+
+        .embed-stage.active {
+            display: flex;
         }
 
         .player-viewport {
             position: relative;
             flex: 1;
             height: 100%;
-            background: #000;
         }
 
         .artplayer-container {
@@ -77,7 +77,7 @@
             height: 100%;
         }
 
-        /* ── Overlay System ── */
+        /* Overlays */
         .overlay {
             position: absolute;
             inset: 0;
@@ -89,16 +89,12 @@
             justify-content: center;
             text-align: center;
             padding: 24px;
-            transition: opacity var(--dur) ease, visibility var(--dur);
         }
 
         .overlay.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
+            display: none !important;
         }
 
-        /* Glow effect in background */
         .overlay-glow {
             position: absolute;
             width: 300px;
@@ -107,11 +103,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            pointer-events: none;
             z-index: -1;
+            pointer-events: none;
         }
 
-        /* Loading UI */
         .spinner {
             width: 48px;
             height: 48px;
@@ -123,65 +118,19 @@
             filter: drop-shadow(0 0 8px var(--ember));
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .loading-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: 0.02em;
-        }
+        .loading-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 8px; }
+        .loading-subtitle { font-family: var(--font-mono); font-size: 0.85rem; color: var(--bone-muted); }
 
-        .loading-subtitle {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: var(--bone-muted);
-            min-height: 20px;
-        }
+        .error-title { color: #ef4444; font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
+        .error-desc { font-size: 0.95rem; color: var(--bone-dim); max-width: 420px; margin-bottom: 24px; }
+        .btn-retry { background: var(--ember); color: #000; font-weight: 600; padding: 10px 24px; border: none; border-radius: var(--r-pill); cursor: pointer; }
 
-        /* Error UI */
-        .error-title {
-            color: #ef4444;
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
-        }
-
-        .error-desc {
-            font-size: 0.95rem;
-            color: var(--bone-dim);
-            max-width: 420px;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        .btn-retry {
-            background: var(--ember);
-            color: #000;
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 10px 24px;
-            border: none;
-            border-radius: var(--r-pill);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 14px var(--ember-glow);
-        }
-
-        .btn-retry:hover {
-            transform: scale(1.05);
-            background: #ff723f;
-        }
-
-        /* ── Dynamic Top HUD Chrome ── */
+        /* HUD Chrome */
         .hud-chrome {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
             padding: 16px 24px 40px;
             z-index: 90;
@@ -189,207 +138,386 @@
             justify-content: space-between;
             align-items: center;
             pointer-events: none;
-            transition: opacity 0.3s;
         }
+        .hud-title { font-size: 1.1rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5); pointer-events: auto; }
+        .hud-actions { display: flex; gap: 12px; pointer-events: auto; }
+        .hud-btn { background: var(--bg-glass); border: 1px solid var(--rule); color: var(--bone-dim); border-radius: var(--r-md); padding: 8px 12px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); }
+        .hud-btn:hover { border-color: var(--ember); color: var(--bone); }
 
-        .hud-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--bone);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            pointer-events: auto;
-        }
-
-        .hud-actions {
-            display: flex;
-            gap: 12px;
-            pointer-events: auto;
-        }
-
-        .hud-btn {
-            background: var(--bg-glass);
-            border: 1px solid var(--rule);
-            color: var(--bone-dim);
-            border-radius: var(--r-md);
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .hud-btn:hover {
-            border-color: var(--ember);
-            color: var(--bone);
-            box-shadow: 0 0 10px var(--ember-glow);
-        }
-
-        /* ── Stream Selector Drawer ── */
+        /* Streams Drawer */
         .streams-drawer {
-            width: 320px;
-            height: 100%;
-            background: #0e0d14;
-            border-left: 1px solid var(--rule);
-            display: flex;
-            flex-direction: column;
-            z-index: 110;
-            transition: transform var(--dur) cubic-bezier(0.16, 1, 0.3, 1), width var(--dur);
+            width: 320px; height: 100%;
+            background: #0e0d14; border-left: 1px solid var(--rule);
+            display: flex; flex-direction: column; z-index: 110;
+            transition: transform var(--dur) cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .streams-drawer.collapsed {
-            transform: translateX(100%);
-            position: absolute;
-            right: 0;
-        }
-
-        .drawer-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--rule);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .drawer-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--bone);
-        }
-
-        .drawer-close {
-            background: transparent;
-            border: none;
-            color: var(--bone-muted);
-            font-size: 1.25rem;
-            cursor: pointer;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .drawer-close:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--bone);
-        }
-
-        .drawer-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .server-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .server-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--bone-muted);
-            margin-bottom: 2px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .server-badge {
-            font-size: 0.65rem;
-            font-weight: 800;
-            padding: 1px 5px;
-            border-radius: 3px;
-        }
-
+        .streams-drawer.collapsed { transform: translateX(100%); position: absolute; right: 0; }
+        .drawer-header { padding: 20px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
+        .drawer-header h3 { font-size: 1rem; font-weight: 600; }
+        .drawer-close { background: transparent; border: none; color: var(--bone-muted); font-size: 1.25rem; cursor: pointer; }
+        .drawer-content { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+        
+        .server-group { display: flex; flex-direction: column; gap: 6px; }
+        .server-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--bone-muted); display: flex; justify-content: space-between; }
+        .server-badge { font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 3px; }
         .server-badge.spider { background: rgba(129, 140, 248, 0.15); color: var(--purple); }
         .server-badge.iron { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
         .server-badge.other { background: rgba(255, 255, 255, 0.08); color: var(--bone-dim); }
+        
+        .stream-card { background: #16151e; border: 1px solid var(--rule); border-radius: var(--r-md); padding: 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+        .stream-card:hover, .stream-card.active { border-color: var(--ember); }
+        .stream-card.active { background: rgba(255, 90, 31, 0.04); box-shadow: 0 0 12px var(--ember-glow); }
+        .stream-card__head { display: flex; justify-content: space-between; align-items: center; }
+        .stream-card__name { font-size: 0.85rem; font-weight: 600; }
+        .stream-card__meta { font-size: 0.75rem; color: var(--bone-muted); font-family: var(--font-mono); }
+        .stream-card__play-indicator { font-size: 0.75rem; color: var(--ember); font-weight: 500; }
 
-        .stream-card {
-            background: #16151e;
-            border: 1px solid var(--rule);
-            border-radius: var(--r-md);
-            padding: 12px;
+        /* ── Standard Developer Portal/Guide Mode ── */
+        .guide-stage {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.25s;
+            min-height: 100vh;
         }
 
-        .stream-card:hover {
-            border-color: var(--ember);
-            box-shadow: 0 4px 12px rgba(255, 90, 31, 0.08);
-            transform: translateY(-1px);
+        .guide-stage.hidden {
+            display: none !important;
         }
 
-        .stream-card.active {
-            border-color: var(--ember);
-            background: rgba(255, 90, 31, 0.04);
-            box-shadow: 0 0 12px var(--ember-glow);
+        .guide-header {
+            border-bottom: 1px solid var(--rule);
+            background: rgba(11, 10, 8, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .stream-card__head {
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .stream-card__name {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--bone);
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .stream-card__meta {
+        .logo-badge {
+            background: var(--ember);
+            color: #000;
+            font-weight: 700;
             font-size: 0.75rem;
-            color: var(--bone-muted);
-            font-family: var(--font-mono);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
         }
 
-        .stream-card__play-indicator {
-            font-size: 0.75rem;
-            color: var(--ember);
-            font-weight: 500;
+        .logo-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
         }
 
-        /* Responsive Layouts */
-        @media (max-width: 768px) {
-            .streams-drawer {
-                width: 100%;
-                position: absolute;
-                inset: 0 0 0 auto;
+        .guide-hero {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .guide-hero {
+                grid-template-columns: 1fr;
+                padding: 32px 20px;
+                gap: 32px;
             }
+        }
+
+        .hero-desc h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 30%, var(--bone-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc p {
+            font-size: 1.1rem;
+            color: var(--bone-dim);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* Sandbox Player Container */
+        .sandbox-box {
+            background: var(--bg-card);
+            border: 1px solid var(--rule);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sandbox-player-frame {
+            aspect-ratio: 16 / 9;
+            background: #000;
+            position: relative;
+        }
+
+        .sandbox-controls {
+            padding: 20px;
+            border-top: 1px solid var(--rule);
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+
+        .search-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-text {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--rule);
+            border-radius: var(--r-md);
+            padding: 10px 14px;
+            color: var(--bone);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-text:focus {
+            border-color: var(--ember);
+        }
+
+        .btn-resolve {
+            background: var(--ember);
+            color: #000;
+            font-weight: 600;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--r-md);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            transition: background 0.2s;
+        }
+
+        .btn-resolve:hover {
+            background: #ff723f;
+        }
+
+        /* Suggestion box */
+        .suggest-box {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #1a1a24;
+            border: 1px solid var(--rule-glow);
+            border-radius: var(--r-md);
+            z-index: 200;
+            max-height: 240px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .suggest-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: var(--bone);
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .suggest-item:hover {
+            background: rgba(255,255,255,0.07);
+        }
+
+        .suggest-img {
+            width: 30px; height: 45px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .suggest-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .suggest-name { font-size: 0.85rem; font-weight: 500; }
+        .suggest-year { font-size: 0.75rem; color: var(--bone-muted); }
+
+        /* Media Info row */
+        .media-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .label-select {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--bone-dim);
+        }
+
+        .select-ui {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--rule);
+            color: var(--bone);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .number-input {
+            width: 55px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--rule);
+            color: var(--bone);
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            outline: none;
+        }
+
+        /* ── Documentation Section ── */
+        .guide-docs {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 24px;
+            border-top: 1px solid var(--rule);
+        }
+
+        .doc-section {
+            margin-bottom: 40px;
+        }
+
+        .doc-section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doc-section h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background: var(--ember);
+            border-radius: 2px;
+        }
+
+        .doc-section p {
+            font-size: 1rem;
+            color: var(--bone-dim);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .code-block {
+            background: #09080c;
+            border: 1px solid var(--rule);
+            border-radius: var(--r-md);
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #34d399;
+            overflow-x: auto;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .code-copy {
+            position: absolute;
+            top: 12px; right: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--rule);
+            color: var(--bone-dim);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .code-copy:hover {
+            color: var(--bone);
+            border-color: var(--ember);
+        }
+
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .params-table th, .params-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .params-table th {
+            color: var(--bone);
+            font-weight: 600;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .params-table td {
+            color: var(--bone-dim);
+        }
+
+        .param-name {
+            font-family: var(--font-mono);
+            color: var(--ember);
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
-    <div class="embed-stage">
-        
-        <!-- ── Left: Video Player Viewport ── -->
+    <!-- ── FULLSCREEN EMBED MODE (Iframe view) ── -->
+    <div id="embedStage" class="embed-stage">
         <div class="player-viewport">
-            
-            <!-- Dynamic HUD Chrome -->
-            <div id="hudChrome" class="hud-chrome">
-                <div id="hudTitle" class="hud-title">Resolving Title...</div>
+            <div id="embedHud" class="hud-chrome">
+                <div id="embedTitle" class="hud-title">Resolving Media...</div>
                 <div class="hud-actions">
                     <button class="hud-btn" onclick="toggleDrawer()">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -399,44 +527,168 @@
                     </button>
                 </div>
             </div>
+            
+            <div id="artplayer-embed" class="artplayer-container"></div>
 
-            <!-- Video Player container -->
-            <div id="artplayer" class="artplayer-container"></div>
-
-            <!-- Loading Overlay -->
-            <div id="loadingOverlay" class="overlay">
+            <div id="embedLoading" class="overlay">
                 <div class="overlay-glow"></div>
                 <div class="spinner"></div>
-                <h4 id="loadingTitle" class="loading-title">Scraping Sources</h4>
-                <p id="loadingSubtitle" class="loading-subtitle">Initializing pipeline...</p>
+                <h4 class="loading-title">Scraping Sub-Servers</h4>
+                <p id="embedLoadingSub" class="loading-subtitle">Contacting API endpoint...</p>
             </div>
 
-            <!-- Error Overlay -->
-            <div id="errorOverlay" class="overlay hidden">
+            <div id="embedError" class="overlay hidden">
                 <div class="overlay-glow" style="background: radial-gradient(circle, rgba(239,68,68,0.15) 0%, rgba(0,0,0,0) 70%);"></div>
-                <h4 class="error-title">Scrape Failed</h4>
-                <p id="errorDesc" class="error-desc">Unable to retrieve stream links from remote host.</p>
-                <button class="btn-retry" onclick="triggerSearch()">Retry Scrape</button>
+                <h4 class="error-title">Proxy Timeout</h4>
+                <p id="embedErrorDesc" class="error-desc">Scraper was unable to pull HLS manifest.</p>
+                <button class="btn-retry" onclick="triggerEmbedScrape()">Retry Connection</button>
             </div>
-
         </div>
 
-        <!-- ── Right: Streams Selection Sidebar Drawer ── -->
-        <div id="streamsDrawer" class="streams-drawer collapsed">
+        <div id="embedDrawer" class="streams-drawer collapsed">
             <div class="drawer-header">
-                <h3>Select Stream Server</h3>
+                <h3>Choose Link Line</h3>
                 <button class="drawer-close" onclick="toggleDrawer()">&times;</button>
             </div>
-            <div id="drawerContent" class="drawer-content">
-                <!-- Group cards dynamically populated -->
-            </div>
+            <div id="embedDrawerContent" class="drawer-content"></div>
         </div>
+    </div>
+
+
+    <!-- ── STANDARD DEVELOPER PORTAL / GUIDE MODE ── -->
+    <div id="guideStage" class="guide-stage">
+        
+        <header class="guide-header">
+            <div class="header-inner">
+                <div class="logo-wrap">
+                    <div class="logo-badge">Player</div>
+                    <span class="logo-title">Moovie Resolver</span>
+                </div>
+                <div>
+                    <a href="https://github.com/iMayhem/moovie-embed" target="_blank" class="hud-btn" style="text-decoration: none;">
+                        GitHub Repo
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <section class="guide-hero">
+            <div class="hero-desc">
+                <h1>Universal HLS Embed Player for Moovie</h1>
+                <p>An elite, resilient resolver engine. Resolves movie and TV content directly from multiple background sub-servers (Iron, Spider, Wolf, Multi, Dark) with auto-failover stream cycling.</p>
+                <p>Simply use the iframe generator below or add query parameters to embed it instantly on any streaming or indexing platform.</p>
+            </div>
+
+            <!-- Interactive Sandbox Tester -->
+            <div class="sandbox-box">
+                <div class="sandbox-player-frame">
+                    <div id="artplayer-sandbox" class="artplayer-container"></div>
+                    
+                    <div id="sandboxLoading" class="overlay">
+                        <div class="overlay-glow"></div>
+                        <div class="spinner"></div>
+                        <h4 class="loading-title">Resolving Sandbox Streams</h4>
+                        <p id="sandboxLoadingSub" class="loading-subtitle">Standing by...</p>
+                    </div>
+
+                    <div id="sandboxError" class="overlay hidden">
+                        <h4 class="error-title">No Streams Found</h4>
+                        <p id="sandboxErrorDesc" class="error-desc">Scraper failed to pull streams for this search query.</p>
+                    </div>
+                </div>
+
+                <div class="sandbox-controls">
+                    <div class="control-row">
+                        <div class="search-input-wrap">
+                            <input type="text" id="sandboxSearch" class="input-text" placeholder="Type Title (e.g. Interstellar, Batman)..." autocomplete="off" oninput="onSuggestInput()" onkeydown="onSuggestKeydown(event)">
+                            <div id="suggestBox" class="suggest-box" style="display: none;"></div>
+                        </div>
+                        <button class="btn-resolve" onclick="resolveSandbox()">Test Resolve</button>
+                    </div>
+
+                    <div class="media-row">
+                        <label class="label-select">
+                            <span>Type</span>
+                            <select id="sandboxType" class="select-ui" onchange="toggleTvInputs()">
+                                <option value="movie">Movie</option>
+                                <option value="tv">TV Show</option>
+                            </select>
+                        </label>
+                        <div id="tvParams" style="display: none; gap: 8px; align-items: center;">
+                            <label class="label-select">
+                                <span>S</span>
+                                <input type="number" id="sandboxSeason" class="number-input" value="1" min="1">
+                            </label>
+                            <label class="label-select">
+                                <span>E</span>
+                                <input type="number" id="sandboxEpisode" class="number-input" value="1" min="1">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Guide Section -->
+        <section class="guide-docs">
+            <div class="doc-section">
+                <h2>Embedding Iframe Generator</h2>
+                <p>Deploy this template and drop the code below into your site. Use any of the query configurations to filter or bypass selectors.</p>
+                <div class="code-block">
+                    <button class="code-copy" onclick="copySnippet()">Copy</button>
+                    <span id="iframeSnippet">&lt;iframe src="https://moovie-embed.pages.dev/?tmdb_id=157336" width="100%" height="450" frameborder="0" allowfullscreen&gt;&lt;/iframe&gt;</span>
+                </div>
+            </div>
+
+            <div class="doc-section">
+                <h2>Query Parameters Reference</h2>
+                <p>Customize the player behavior by appending these parameters to the URL:</p>
+                <table class="params-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Description</th>
+                            <th>Value Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="param-name">tmdb_id</td>
+                            <td>Exact TMDB ID to skip database title lookup (Recommended).</td>
+                            <td><code>157336</code> (Interstellar)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">title</td>
+                            <td>Title string query used as lookup fallback.</td>
+                            <td><code>The+Batman</code></td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">season</td>
+                            <td>TV series season number (omitted or 0 for movies).</td>
+                            <td><code>1</code></td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">episode</td>
+                            <td>TV series episode number (omitted or 0 for movies).</td>
+                            <td><code>1</code></td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">media_type</td>
+                            <td>Helps speed up TMDB search queries.</td>
+                            <td><code>movie</code> or <code>tv</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
     </div>
 
-    <!-- Initialization Logic -->
+    <!-- Core Player Logic -->
     <script>
         const API_BASE = "https://proxy.moovie.fun";
+        const TMDB_KEY = "dfa4c2c7c1de1005adee824dc5593672";
+
         const LOADING_MESSAGES = [
             "Summoning resolvers...",
             "Scanning the peer matrix...",
@@ -445,112 +697,129 @@
             "Peeling the HLS layer..."
         ];
 
-        let artInstance = null;
-        let hlsInstance = null;
-        let scrapeResults = null;
-        let flatStreams = [];
-        let activeStreamUrl = "";
-        let currentProvider = "";
-        let currentIndex = 0;
-        let messageInterval = null;
+        // Active Player State
+        let activeArtInstance = null;
+        let activeHlsInstance = null;
+        let activeResults = null;
+        let activeFlatStreams = [];
+        let activeUrl = "";
+        let activeProvider = "";
+        let activeIndex = 0;
+        let loaderInterval = null;
 
-        // Query parameters
+        // Autocomplete autocomplete Suggest state
+        let suggestTimer = null;
+        let selectedSuggestTmdbId = null;
+        let selectedSuggestType = null;
+
+        // Parse search query
         const urlParams = new URLSearchParams(window.location.search);
-        const titleParam = urlParams.get('title') || 'Interstellar';
-        const tmdbIdParam = urlParams.get('tmdb_id');
-        const mediaTypeParam = urlParams.get('media_type');
-        const seasonParam = parseInt(urlParams.get('season')) || 0;
-        const episodeParam = parseInt(urlParams.get('episode')) || 0;
-        const fastParam = urlParams.get('fast') === '1' ? '1' : '';
+        const hasParams = urlParams.has('title') || urlParams.has('tmdb_id');
 
-        // Display Title
-        document.getElementById('hudTitle').innerText = titleParam + (seasonParam > 0 ? ` (S${seasonParam}E${episodeParam})` : "");
-
-        function showLoading(show) {
-            const l = document.getElementById('loadingOverlay');
-            if (show) {
-                l.classList.remove('hidden');
-                let i = 0;
-                document.getElementById('loadingSubtitle').innerText = LOADING_MESSAGES[0];
-                clearInterval(messageInterval);
-                messageInterval = setInterval(() => {
-                    i = (i + 1) % LOADING_MESSAGES.length;
-                    document.getElementById('loadingSubtitle').innerText = LOADING_MESSAGES[i];
-                }, 1800);
-            } else {
-                l.classList.add('hidden');
-                clearInterval(messageInterval);
-            }
+        if (hasParams) {
+            // Activate Fullscreen Embed Mode
+            document.getElementById('embedStage').classList.add('active');
+            document.getElementById('guideStage').classList.add('hidden');
+            
+            // Populate HUD
+            const title = urlParams.get('title') || 'Resolving Media';
+            const season = parseInt(urlParams.get('season')) || 0;
+            const episode = parseInt(urlParams.get('episode')) || 0;
+            document.getElementById('embedTitle').innerText = title + (season > 0 ? ` (S${season}E${episode})` : "");
+            
+            triggerEmbedScrape();
+        } else {
+            // Standard Guide mode: Init fallback load (Interstellar)
+            resolveSandbox();
         }
 
-        function showError(show, msg = "") {
-            const e = document.getElementById('errorOverlay');
-            if (show) {
-                e.classList.remove('hidden');
-                if (msg) document.getElementById('errorDesc').innerText = msg;
-            } else {
-                e.classList.add('hidden');
-            }
-        }
-
+        // ── Fullscreen Iframe Scrape & Play Logic ──
         function toggleDrawer() {
-            document.getElementById('streamsDrawer').classList.toggle('collapsed');
+            document.getElementById('embedDrawer').classList.toggle('collapsed');
         }
 
         function getTargetExt(url) {
             const m = url.match(/[?&]url=([^&]+)/);
             if (m) {
                 try {
-                    const decoded = atob(decodeURIComponent(m[1]));
-                    return decoded.split('?')[0].split('#')[0].toLowerCase();
-                } catch (e) { }
+                    return atob(decodeURIComponent(m[1])).split('?')[0].split('#')[0].toLowerCase();
+                } catch(e){}
             }
             return url.split('?')[0].split('#')[0].toLowerCase();
         }
 
-        async function triggerSearch() {
-            showError(false);
-            showLoading(true);
+        function showEmbedLoading(show) {
+            const l = document.getElementById('embedLoading');
+            if (show) {
+                l.classList.remove('hidden');
+                let i = 0;
+                document.getElementById('embedLoadingSub').innerText = LOADING_MESSAGES[0];
+                clearInterval(loaderInterval);
+                loaderInterval = setInterval(() => {
+                    i = (i + 1) % LOADING_MESSAGES.length;
+                    document.getElementById('embedLoadingSub').innerText = LOADING_MESSAGES[i];
+                }, 1800);
+            } else {
+                l.classList.add('hidden');
+                clearInterval(loaderInterval);
+            }
+        }
+
+        function showEmbedError(show, msg = "") {
+            const e = document.getElementById('embedError');
+            if (show) {
+                e.classList.remove('hidden');
+                if (msg) document.getElementById('embedErrorDesc').innerText = msg;
+            } else {
+                e.classList.add('hidden');
+            }
+        }
+
+        async function triggerEmbedScrape() {
+            showEmbedError(false);
+            showEmbedLoading(true);
             destroyPlayer();
 
+            const title = urlParams.get('title');
+            const tmdbId = urlParams.get('tmdb_id');
+            const mediaType = urlParams.get('media_type');
+            const season = parseInt(urlParams.get('season')) || 0;
+            const episode = parseInt(urlParams.get('episode')) || 0;
+            const fast = urlParams.get('fast') === '1' ? '1' : '';
+
             const params = {};
-            if (tmdbIdParam) {
-                params.tmdb_id = tmdbIdParam;
-                params.title = titleParam;
-                if (mediaTypeParam) params.media_type = mediaTypeParam;
+            if (tmdbId) {
+                params.tmdb_id = tmdbId;
+                params.title = title || 'Media';
+                if (mediaType) params.media_type = mediaType;
             } else {
-                params.title = titleParam;
+                params.title = title;
             }
-            if (seasonParam > 0) params.season = seasonParam;
-            if (episodeParam > 0) params.episode = episodeParam;
-            if (fastParam) params.fast = '1';
+            if (season > 0) params.season = season;
+            if (episode > 0) params.episode = episode;
+            if (fast) params.fast = '1';
 
             const qs = new URLSearchParams(params).toString();
             const url = `${API_BASE}/api/scrape?${qs}`;
 
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const data = await response.json();
-                scrapeResults = data;
-                
-                // Formulate flatStreams
-                flatStreams = [];
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                activeResults = data;
+
+                activeFlatStreams = [];
                 for (const [provider, urls] of Object.entries(data)) {
                     urls.forEach((streamUrl, idx) => {
-                        flatStreams.push({ provider, index: idx, url: streamUrl });
+                        activeFlatStreams.push({ provider, index: idx, url: streamUrl });
                     });
                 }
 
-                if (flatStreams.length === 0) {
-                    throw new Error("No streams resolved by backend scraper.");
-                }
+                if (!activeFlatStreams.length) throw new Error("No streams returned by resolvers.");
 
-                // Render Sidebar Links
-                renderSidebar();
+                renderDrawerContent();
 
-                // Sort keys to prioritize Spider first in autoplay logic
+                // Sort Spider first
                 const sortedEntries = Object.entries(data).sort(([keyA], [keyB]) => {
                     const isSpiderA = keyA.toLowerCase().includes('spider');
                     const isSpiderB = keyB.toLowerCase().includes('spider');
@@ -559,7 +828,6 @@
                     return keyA.localeCompare(keyB);
                 });
 
-                // Auto-play first match from sorted servers list
                 let autoPlayed = false;
                 const playableExts = ['.m3u8', '.mp4', '.webm'];
                 
@@ -567,7 +835,7 @@
                     for (let idx = 0; idx < urls.length; idx++) {
                         const ext = getTargetExt(urls[idx]);
                         if (playableExts.some(e => ext.endsWith(e))) {
-                            playStream(prov, idx);
+                            playSelectedStream(prov, idx, '#artplayer-embed');
                             autoPlayed = true;
                             break;
                         }
@@ -576,117 +844,108 @@
                 }
 
                 if (!autoPlayed) {
-                    // Fallback to absolute first stream
                     const firstProv = Object.keys(data)[0];
-                    playStream(firstProv, 0);
+                    playSelectedStream(firstProv, 0, '#artplayer-embed');
                 }
 
-                showLoading(false);
+                showEmbedLoading(false);
             } catch (err) {
-                console.error("Scraper load error: ", err);
-                showLoading(false);
-                showError(true, err.message || "Failed to establish proxy connection.");
+                console.error(err);
+                showEmbedLoading(false);
+                showEmbedError(true, err.message);
             }
         }
 
-        function renderSidebar() {
-            const drawer = document.getElementById('drawerContent');
-            drawer.innerHTML = "";
+        function renderDrawerContent() {
+            const container = document.getElementById('embedDrawerContent');
+            container.innerHTML = "";
 
-            if (!scrapeResults) return;
-
-            // Group by base provider names
-            for (const [providerKey, urls] of Object.entries(scrapeResults)) {
+            for (const [provider, urls] of Object.entries(activeResults)) {
                 if (!urls.length) continue;
 
-                const groupDiv = document.createElement('div');
-                groupDiv.className = "server-group";
+                const group = document.createElement('div');
+                group.className = "server-group";
 
-                const isSpider = providerKey.toLowerCase().includes('spider');
-                const isIron = providerKey.toLowerCase().includes('iron');
-                const badgeClass = isSpider ? "spider" : (isIron ? "iron" : "other");
-                const badgeText = isSpider ? "Spider" : (isIron ? "Iron" : "Direct");
+                const isSpider = provider.toLowerCase().includes('spider');
+                const isIron = provider.toLowerCase().includes('iron');
+                const badge = isSpider ? "spider" : (isIron ? "iron" : "other");
+                const label = isSpider ? "Spider" : (isIron ? "Iron" : "Direct");
 
-                groupDiv.innerHTML = `
+                group.innerHTML = `
                     <div class="server-title">
-                        <span>${providerKey}</span>
-                        <span class="server-badge ${badgeClass}">${badgeText}</span>
+                        <span>${provider}</span>
+                        <span class="server-badge ${badge}">${label}</span>
                     </div>
                 `;
 
                 urls.forEach((url, idx) => {
                     const card = document.createElement('div');
-                    card.className = `stream-card ${activeStreamUrl === url ? 'active' : ''}`;
-                    card.dataset.provider = providerKey;
+                    card.className = `stream-card ${activeUrl === url ? 'active' : ''}`;
+                    card.dataset.provider = provider;
                     card.dataset.index = idx;
-                    
-                    const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
-                    const label = isM3u8 ? 'HLS Live Stream' : 'Progressive MP4';
 
                     card.innerHTML = `
                         <div class="stream-card__head">
-                            <span class="stream-card__name">Line #${idx + 1}</span>
-                            ${activeStreamUrl === url ? '<span class="stream-card__play-indicator">Active</span>' : ''}
+                            <span class="stream-card__name">Stream Line #${idx + 1}</span>
+                            ${activeUrl === url ? '<span class="stream-card__play-indicator">Playing</span>' : ''}
                         </div>
-                        <span class="stream-card__meta">${label} · ${providerKey.split(' · ')[1] || 'Main'}</span>
+                        <span class="stream-card__meta">${url.includes('.m3u8') ? 'HLS Stream' : 'Direct MP4'}</span>
                     `;
 
                     card.addEventListener('click', () => {
-                        playStream(providerKey, idx);
+                        playSelectedStream(provider, idx, '#artplayer-embed');
                         toggleDrawer();
                     });
 
-                    groupDiv.appendChild(card);
+                    group.appendChild(card);
                 });
 
-                drawer.appendChild(groupDiv);
+                container.appendChild(group);
             }
         }
 
-        function playStream(provider, idx) {
-            const url = scrapeResults?.[provider]?.[idx];
+        function playSelectedStream(provider, idx, targetSelector) {
+            const url = activeResults?.[provider]?.[idx];
             if (!url) return;
 
-            activeStreamUrl = url;
-            currentProvider = provider;
-            currentIndex = idx;
+            activeUrl = url;
+            activeProvider = provider;
+            activeIndex = idx;
 
-            // Redraw sidebar cards to reflect active item
-            document.querySelectorAll('.stream-card').forEach(card => {
-                const isActive = card.dataset.provider === provider && parseInt(card.dataset.index) === idx;
-                card.classList.toggle('active', isActive);
-                
-                const indicator = card.querySelector('.stream-card__play-indicator');
-                if (isActive) {
-                    if (!indicator) {
-                        const h = card.querySelector('.stream-card__head');
-                        h.insertAdjacentHTML('beforeend', '<span class="stream-card__play-indicator">Active</span>');
+            // Re-render indicators if in embed mode
+            if (targetSelector === '#artplayer-embed') {
+                document.querySelectorAll('.stream-card').forEach(card => {
+                    const active = card.dataset.provider === provider && parseInt(card.dataset.index) === idx;
+                    card.classList.toggle('active', active);
+                    const indicator = card.querySelector('.stream-card__play-indicator');
+                    if (active) {
+                        if (!indicator) card.querySelector('.stream-card__head').insertAdjacentHTML('beforeend', '<span class="stream-card__play-indicator">Playing</span>');
+                    } else if (indicator) {
+                        indicator.remove();
                     }
-                } else if (indicator) {
-                    indicator.remove();
-                }
-            });
+                });
+            }
 
-            mountArtplayer(url);
+            mountSandboxPlayer(url, targetSelector);
         }
 
         function destroyPlayer() {
-            if (artInstance) {
-                try { artInstance.destroy(false); } catch(e){}
-                artInstance = null;
+            if (activeArtInstance) {
+                try { activeArtInstance.destroy(false); } catch(e){}
+                activeArtInstance = null;
             }
-            if (hlsInstance) {
-                try { hlsInstance.destroy(); } catch(e){}
-                hlsInstance = null;
+            if (activeHlsInstance) {
+                try { activeHlsInstance.destroy(); } catch(e){}
+                activeHlsInstance = null;
             }
         }
 
-        function mountArtplayer(url) {
+        function mountSandboxPlayer(url, selector) {
             destroyPlayer();
 
             const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
             const config = {
-                container: '#artplayer',
+                container: selector,
                 url: url,
                 type: isM3u8 ? 'm3u8' : 'mp4',
                 autoplay: true,
@@ -704,29 +963,25 @@
                 config.customType = {
                     m3u8(video, src) {
                         if (window.Hls.isSupported()) {
-                            hlsInstance = new window.Hls({
+                            activeHlsInstance = new window.Hls({
                                 enableWorker: true,
                                 maxBufferLength: 30,
                                 maxMaxBufferLength: 60,
                             });
 
-                            hlsInstance.on(window.Hls.Events.ERROR, (event, data) => {
+                            activeHlsInstance.on(window.Hls.Events.ERROR, (event, data) => {
                                 if (data.fatal) {
-                                    // Trigger auto-fallback path
-                                    const matchIdx = flatStreams.findIndex(s => s.url === src);
-                                    if (matchIdx !== -1 && matchIdx + 1 < flatStreams.length) {
-                                        const next = flatStreams[matchIdx + 1];
-                                        console.warn(`HLS fatal error. Fallback to stream #${matchIdx + 2} (${next.provider})`);
-                                        hlsInstance.destroy();
-                                        playStream(next.provider, next.index);
-                                    } else {
-                                        console.error("All streams exhausted.");
+                                    const matchIdx = activeFlatStreams.findIndex(s => s.url === src);
+                                    if (matchIdx !== -1 && matchIdx + 1 < activeFlatStreams.length) {
+                                        const next = activeFlatStreams[matchIdx + 1];
+                                        activeHlsInstance.destroy();
+                                        playSelectedStream(next.provider, next.index, selector);
                                     }
                                 }
                             });
 
-                            hlsInstance.loadSource(src);
-                            hlsInstance.attachMedia(video);
+                            activeHlsInstance.loadSource(src);
+                            activeHlsInstance.attachMedia(video);
                         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                             video.src = src;
                         }
@@ -734,11 +989,157 @@
                 };
             }
 
-            artInstance = new Artplayer(config);
+            activeArtInstance = new Artplayer(config);
         }
 
-        // Run
-        triggerSearch();
+        // ── Sandbox Tester View Logic ──
+        function toggleTvInputs() {
+            const type = document.getElementById('sandboxType').value;
+            document.getElementById('tvParams').style.display = type === 'tv' ? 'flex' : 'none';
+        }
+
+        async function resolveSandbox() {
+            const query = document.getElementById('sandboxSearch').value.trim() || 'Interstellar';
+            const type = document.getElementById('sandboxType').value;
+            const season = parseInt(document.getElementById('sandboxSeason').value) || 1;
+            const episode = parseInt(document.getElementById('sandboxEpisode').value) || 1;
+
+            const l = document.getElementById('sandboxLoading');
+            const errDiv = document.getElementById('sandboxError');
+            
+            l.classList.remove('hidden');
+            errDiv.classList.add('hidden');
+            destroyPlayer();
+
+            let i = 0;
+            document.getElementById('sandboxLoadingSub').innerText = LOADING_MESSAGES[0];
+            clearInterval(loaderInterval);
+            loaderInterval = setInterval(() => {
+                i = (i + 1) % LOADING_MESSAGES.length;
+                document.getElementById('sandboxLoadingSub').innerText = LOADING_MESSAGES[i];
+            }, 1800);
+
+            const params = {};
+            if (selectedSuggestTmdbId && query === document.getElementById('sandboxSearch').value) {
+                params.tmdb_id = selectedSuggestTmdbId;
+                params.title = query;
+                params.media_type = selectedSuggestType;
+            } else {
+                params.title = query;
+            }
+            if (type === 'tv') {
+                params.season = season;
+                params.episode = episode;
+            }
+
+            const qs = new URLSearchParams(params).toString();
+            try {
+                const res = await fetch(`${API_BASE}/api/scrape?${qs}`);
+                if (!res.ok) throw new Error("HTTP connection error");
+                const data = await res.json();
+                activeResults = data;
+
+                activeFlatStreams = [];
+                for (const [provider, urls] of Object.entries(data)) {
+                    urls.forEach((streamUrl, idx) => {
+                        activeFlatStreams.push({ provider, index: idx, url: streamUrl });
+                    });
+                }
+
+                if (!activeFlatStreams.length) throw new Error("No streams found.");
+
+                // Autoplay
+                const firstProv = Object.keys(data)[0];
+                playSelectedStream(firstProv, 0, '#artplayer-sandbox');
+                l.classList.add('hidden');
+            } catch (err) {
+                console.error(err);
+                l.classList.add('hidden');
+                errDiv.classList.remove('hidden');
+                document.getElementById('sandboxErrorDesc').innerText = err.message || "Failed to resolve stream.";
+            } finally {
+                clearInterval(loaderInterval);
+            }
+        }
+
+        // Autocomplete Suggest
+        function onSuggestInput() {
+            const query = document.getElementById('sandboxSearch').value.trim();
+            const suggestBox = document.getElementById('suggestBox');
+            
+            if (suggestTimer) clearTimeout(suggestTimer);
+            if (!query) {
+                suggestBox.style.display = 'none';
+                return;
+            }
+
+            suggestTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&include_adult=false&page=1`);
+                    const data = await res.json();
+                    const results = (data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 5);
+
+                    if (!results.length) {
+                        suggestBox.style.display = 'none';
+                        return;
+                    }
+
+                    suggestBox.innerHTML = "";
+                    results.forEach(item => {
+                        const btn = document.createElement('button');
+                        btn.className = "suggest-item";
+                        const poster = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : '';
+                        const name = item.title || item.name || '';
+                        const year = (item.release_date || item.first_air_date || '').slice(0, 4);
+
+                        btn.innerHTML = `
+                            <img class="suggest-img" src="${poster || 'https://via.placeholder.com/30x45'}" alt="">
+                            <div class="suggest-meta">
+                                <span class="suggest-name">${name}</span>
+                                <span class="suggest-year">${item.media_type.toUpperCase()} · ${year || '?' }</span>
+                            </div>
+                        `;
+
+                        btn.addEventListener('click', () => {
+                            document.getElementById('sandboxSearch').value = name;
+                            selectedSuggestTmdbId = item.id;
+                            selectedSuggestType = item.media_type;
+                            
+                            // Autoplay matching mode
+                            document.getElementById('sandboxType').value = item.media_type;
+                            toggleTvInputs();
+
+                            suggestBox.style.display = 'none';
+                            resolveSandbox();
+                        });
+
+                        suggestBox.appendChild(btn);
+                    });
+
+                    suggestBox.style.display = 'block';
+                } catch(e){}
+            }, 300);
+        }
+
+        // Hide autocomplete on click outside
+        document.addEventListener('click', (e) => {
+            if (e.target.id !== 'sandboxSearch') {
+                document.getElementById('suggestBox').style.display = 'none';
+            }
+        });
+
+        function onSuggestKeydown(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('suggestBox').style.display = 'none';
+                resolveSandbox();
+            }
+        }
+
+        function copySnippet() {
+            const text = document.getElementById('iframeSnippet').innerText;
+            navigator.clipboard.writeText(text);
+            alert("Embedded iframe code copied to clipboard!");
+        }
     </script>
 </body>
 </html>
