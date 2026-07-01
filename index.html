@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moovie Embed Player</title>
+    
+    <!-- Premium Typography & Stylesheets -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    
+    <!-- ArtPlayer & hls.js CDNs -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.css">
+    <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #0b0a08;
+            --bg-glass: rgba(26, 26, 36, 0.65);
+            --bg-card: #15141b;
+            --rule: rgba(255, 255, 255, 0.08);
+            --rule-glow: rgba(255, 255, 255, 0.15);
+            --ember: #ff5a1f;
+            --ember-glow: rgba(255, 90, 31, 0.25);
+            --purple: #818cf8;
+            --purple-glow: rgba(129, 140, 248, 0.2);
+            --bone: #f5f2eb;
+            --bone-dim: #c5c2bb;
+            --bone-muted: #85827b;
+            
+            --font-sans: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --r-lg: 16px;
+            --r-md: 10px;
+            --r-pill: 9999px;
+            --dur: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--bone);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Player Container ── */
+        .embed-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .player-viewport {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            background: #000;
+        }
+
+        .artplayer-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── Overlay System ── */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            transition: opacity var(--dur) ease, visibility var(--dur);
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Glow effect in background */
+        .overlay-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--ember-glow) 0%, rgba(0,0,0,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Loading UI */
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.05);
+            border-top-color: var(--ember);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 8px var(--ember));
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .loading-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--bone-muted);
+            min-height: 20px;
+        }
+
+        /* Error UI */
+        .error-title {
+            color: #ef4444;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+
+        .error-desc {
+            font-size: 0.95rem;
+            color: var(--bone-dim);
+            max-width: 420px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .btn-retry {
+            background: var(--ember);
+            color: #000;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--r-pill);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px var(--ember-glow);
+        }
+
+        .btn-retry:hover {
+            transform: scale(1.05);
+            background: #ff723f;
+        }
+
+        /* ── Dynamic Top HUD Chrome ── */
+        .hud-chrome {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+            padding: 16px 24px 40px;
+            z-index: 90;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .hud-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--bone);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: auto;
+        }
+
+        .hud-actions {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .hud-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--rule);
+            color: var(--bone-dim);
+            border-radius: var(--r-md);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            border-color: var(--ember);
+            color: var(--bone);
+            box-shadow: 0 0 10px var(--ember-glow);
+        }
+
+        /* ── Stream Selector Drawer ── */
+        .streams-drawer {
+            width: 320px;
+            height: 100%;
+            background: #0e0d14;
+            border-left: 1px solid var(--rule);
+            display: flex;
+            flex-direction: column;
+            z-index: 110;
+            transition: transform var(--dur) cubic-bezier(0.16, 1, 0.3, 1), width var(--dur);
+        }
+
+        .streams-drawer.collapsed {
+            transform: translateX(100%);
+            position: absolute;
+            right: 0;
+        }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--rule);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--bone);
+        }
+
+        .drawer-close {
+            background: transparent;
+            border: none;
+            color: var(--bone-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--bone);
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .server-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .server-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--bone-muted);
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .server-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .server-badge.spider { background: rgba(129, 140, 248, 0.15); color: var(--purple); }
+        .server-badge.iron { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+        .server-badge.other { background: rgba(255, 255, 255, 0.08); color: var(--bone-dim); }
+
+        .stream-card {
+            background: #16151e;
+            border: 1px solid var(--rule);
+            border-radius: var(--r-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.25s;
+        }
+
+        .stream-card:hover {
+            border-color: var(--ember);
+            box-shadow: 0 4px 12px rgba(255, 90, 31, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .stream-card.active {
+            border-color: var(--ember);
+            background: rgba(255, 90, 31, 0.04);
+            box-shadow: 0 0 12px var(--ember-glow);
+        }
+
+        .stream-card__head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stream-card__name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--bone);
+        }
+
+        .stream-card__meta {
+            font-size: 0.75rem;
+            color: var(--bone-muted);
+            font-family: var(--font-mono);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .stream-card__play-indicator {
+            font-size: 0.75rem;
+            color: var(--ember);
+            font-weight: 500;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 768px) {
+            .streams-drawer {
+                width: 100%;
+                position: absolute;
+                inset: 0 0 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="embed-stage">
+        
+        <!-- ── Left: Video Player Viewport ── -->
+        <div class="player-viewport">
+            
+            <!-- Dynamic HUD Chrome -->
+            <div id="hudChrome" class="hud-chrome">
+                <div id="hudTitle" class="hud-title">Resolving Title...</div>
+                <div class="hud-actions">
+                    <button class="hud-btn" onclick="toggleDrawer()">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"/>
+                        </svg>
+                        Servers
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Player container -->
+            <div id="artplayer" class="artplayer-container"></div>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="overlay">
+                <div class="overlay-glow"></div>
+                <div class="spinner"></div>
+                <h4 id="loadingTitle" class="loading-title">Scraping Sources</h4>
+                <p id="loadingSubtitle" class="loading-subtitle">Initializing pipeline...</p>
+            </div>
+
+            <!-- Error Overlay -->
+            <div id="errorOverlay" class="overlay hidden">
+                <div class="overlay-glow" style="background: radial-gradient(circle, rgba(239,68,68,0.15) 0%, rgba(0,0,0,0) 70%);"></div>
+                <h4 class="error-title">Scrape Failed</h4>
+                <p id="errorDesc" class="error-desc">Unable to retrieve stream links from remote host.</p>
+                <button class="btn-retry" onclick="triggerSearch()">Retry Scrape</button>
+            </div>
+
+        </div>
+
+        <!-- ── Right: Streams Selection Sidebar Drawer ── -->
+        <div id="streamsDrawer" class="streams-drawer collapsed">
+            <div class="drawer-header">
+                <h3>Select Stream Server</h3>
+                <button class="drawer-close" onclick="toggleDrawer()">&times;</button>
+            </div>
+            <div id="drawerContent" class="drawer-content">
+                <!-- Group cards dynamically populated -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Initialization Logic -->
+    <script>
+        const API_BASE = "https://proxy.moovie.fun";
+        const LOADING_MESSAGES = [
+            "Summoning resolvers...",
+            "Scanning the peer matrix...",
+            "Verifying stream encryption...",
+            "Bypassing server geoblocks...",
+            "Peeling the HLS layer..."
+        ];
+
+        let artInstance = null;
+        let hlsInstance = null;
+        let scrapeResults = null;
+        let flatStreams = [];
+        let activeStreamUrl = "";
+        let currentProvider = "";
+        let currentIndex = 0;
+        let messageInterval = null;
+
+        // Query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const titleParam = urlParams.get('title') || 'Interstellar';
+        const tmdbIdParam = urlParams.get('tmdb_id');
+        const mediaTypeParam = urlParams.get('media_type');
+        const seasonParam = parseInt(urlParams.get('season')) || 0;
+        const episodeParam = parseInt(urlParams.get('episode')) || 0;
+        const fastParam = urlParams.get('fast') === '1' ? '1' : '';
+
+        // Display Title
+        document.getElementById('hudTitle').innerText = titleParam + (seasonParam > 0 ? ` (S${seasonParam}E${episodeParam})` : "");
+
+        function showLoading(show) {
+            const l = document.getElementById('loadingOverlay');
+            if (show) {
+                l.classList.remove('hidden');
+                let i = 0;
+                document.getElementById('loadingSubtitle').innerText = LOADING_MESSAGES[0];
+                clearInterval(messageInterval);
+                messageInterval = setInterval(() => {
+                    i = (i + 1) % LOADING_MESSAGES.length;
+                    document.getElementById('loadingSubtitle').innerText = LOADING_MESSAGES[i];
+                }, 1800);
+            } else {
+                l.classList.add('hidden');
+                clearInterval(messageInterval);
+            }
+        }
+
+        function showError(show, msg = "") {
+            const e = document.getElementById('errorOverlay');
+            if (show) {
+                e.classList.remove('hidden');
+                if (msg) document.getElementById('errorDesc').innerText = msg;
+            } else {
+                e.classList.add('hidden');
+            }
+        }
+
+        function toggleDrawer() {
+            document.getElementById('streamsDrawer').classList.toggle('collapsed');
+        }
+
+        function getTargetExt(url) {
+            const m = url.match(/[?&]url=([^&]+)/);
+            if (m) {
+                try {
+                    const decoded = atob(decodeURIComponent(m[1]));
+                    return decoded.split('?')[0].split('#')[0].toLowerCase();
+                } catch (e) { }
+            }
+            return url.split('?')[0].split('#')[0].toLowerCase();
+        }
+
+        async function triggerSearch() {
+            showError(false);
+            showLoading(true);
+            destroyPlayer();
+
+            const params = {};
+            if (tmdbIdParam) {
+                params.tmdb_id = tmdbIdParam;
+                params.title = titleParam;
+                if (mediaTypeParam) params.media_type = mediaTypeParam;
+            } else {
+                params.title = titleParam;
+            }
+            if (seasonParam > 0) params.season = seasonParam;
+            if (episodeParam > 0) params.episode = episodeParam;
+            if (fastParam) params.fast = '1';
+
+            const qs = new URLSearchParams(params).toString();
+            const url = `${API_BASE}/api/scrape?${qs}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                scrapeResults = data;
+                
+                // Formulate flatStreams
+                flatStreams = [];
+                for (const [provider, urls] of Object.entries(data)) {
+                    urls.forEach((streamUrl, idx) => {
+                        flatStreams.push({ provider, index: idx, url: streamUrl });
+                    });
+                }
+
+                if (flatStreams.length === 0) {
+                    throw new Error("No streams resolved by backend scraper.");
+                }
+
+                // Render Sidebar Links
+                renderSidebar();
+
+                // Sort keys to prioritize Spider first in autoplay logic
+                const sortedEntries = Object.entries(data).sort(([keyA], [keyB]) => {
+                    const isSpiderA = keyA.toLowerCase().includes('spider');
+                    const isSpiderB = keyB.toLowerCase().includes('spider');
+                    if (isSpiderA && !isSpiderB) return -1;
+                    if (!isSpiderA && isSpiderB) return 1;
+                    return keyA.localeCompare(keyB);
+                });
+
+                // Auto-play first match from sorted servers list
+                let autoPlayed = false;
+                const playableExts = ['.m3u8', '.mp4', '.webm'];
+                
+                for (const [prov, urls] of sortedEntries) {
+                    for (let idx = 0; idx < urls.length; idx++) {
+                        const ext = getTargetExt(urls[idx]);
+                        if (playableExts.some(e => ext.endsWith(e))) {
+                            playStream(prov, idx);
+                            autoPlayed = true;
+                            break;
+                        }
+                    }
+                    if (autoPlayed) break;
+                }
+
+                if (!autoPlayed) {
+                    // Fallback to absolute first stream
+                    const firstProv = Object.keys(data)[0];
+                    playStream(firstProv, 0);
+                }
+
+                showLoading(false);
+            } catch (err) {
+                console.error("Scraper load error: ", err);
+                showLoading(false);
+                showError(true, err.message || "Failed to establish proxy connection.");
+            }
+        }
+
+        function renderSidebar() {
+            const drawer = document.getElementById('drawerContent');
+            drawer.innerHTML = "";
+
+            if (!scrapeResults) return;
+
+            // Group by base provider names
+            for (const [providerKey, urls] of Object.entries(scrapeResults)) {
+                if (!urls.length) continue;
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "server-group";
+
+                const isSpider = providerKey.toLowerCase().includes('spider');
+                const isIron = providerKey.toLowerCase().includes('iron');
+                const badgeClass = isSpider ? "spider" : (isIron ? "iron" : "other");
+                const badgeText = isSpider ? "Spider" : (isIron ? "Iron" : "Direct");
+
+                groupDiv.innerHTML = `
+                    <div class="server-title">
+                        <span>${providerKey}</span>
+                        <span class="server-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                `;
+
+                urls.forEach((url, idx) => {
+                    const card = document.createElement('div');
+                    card.className = `stream-card ${activeStreamUrl === url ? 'active' : ''}`;
+                    card.dataset.provider = providerKey;
+                    card.dataset.index = idx;
+                    
+                    const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
+                    const label = isM3u8 ? 'HLS Live Stream' : 'Progressive MP4';
+
+                    card.innerHTML = `
+                        <div class="stream-card__head">
+                            <span class="stream-card__name">Line #${idx + 1}</span>
+                            ${activeStreamUrl === url ? '<span class="stream-card__play-indicator">Active</span>' : ''}
+                        </div>
+                        <span class="stream-card__meta">${label} · ${providerKey.split(' · ')[1] || 'Main'}</span>
+                    `;
+
+                    card.addEventListener('click', () => {
+                        playStream(providerKey, idx);
+                        toggleDrawer();
+                    });
+
+                    groupDiv.appendChild(card);
+                });
+
+                drawer.appendChild(groupDiv);
+            }
+        }
+
+        function playStream(provider, idx) {
+            const url = scrapeResults?.[provider]?.[idx];
+            if (!url) return;
+
+            activeStreamUrl = url;
+            currentProvider = provider;
+            currentIndex = idx;
+
+            // Redraw sidebar cards to reflect active item
+            document.querySelectorAll('.stream-card').forEach(card => {
+                const isActive = card.dataset.provider === provider && parseInt(card.dataset.index) === idx;
+                card.classList.toggle('active', isActive);
+                
+                const indicator = card.querySelector('.stream-card__play-indicator');
+                if (isActive) {
+                    if (!indicator) {
+                        const h = card.querySelector('.stream-card__head');
+                        h.insertAdjacentHTML('beforeend', '<span class="stream-card__play-indicator">Active</span>');
+                    }
+                } else if (indicator) {
+                    indicator.remove();
+                }
+            });
+
+            mountArtplayer(url);
+        }
+
+        function destroyPlayer() {
+            if (artInstance) {
+                try { artInstance.destroy(false); } catch(e){}
+                artInstance = null;
+            }
+            if (hlsInstance) {
+                try { hlsInstance.destroy(); } catch(e){}
+                hlsInstance = null;
+            }
+        }
+
+        function mountArtplayer(url) {
+            destroyPlayer();
+
+            const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
+            const config = {
+                container: '#artplayer',
+                url: url,
+                type: isM3u8 ? 'm3u8' : 'mp4',
+                autoplay: true,
+                preload: 'auto',
+                playbackRate: true,
+                aspectRatio: true,
+                fullscreen: true,
+                fullscreenWeb: true,
+                miniProgressBar: true,
+                setting: true,
+                theme: '#ff5a1f',
+            };
+
+            if (isM3u8 && window.Hls) {
+                config.customType = {
+                    m3u8(video, src) {
+                        if (window.Hls.isSupported()) {
+                            hlsInstance = new window.Hls({
+                                enableWorker: true,
+                                maxBufferLength: 30,
+                                maxMaxBufferLength: 60,
+                            });
+
+                            hlsInstance.on(window.Hls.Events.ERROR, (event, data) => {
+                                if (data.fatal) {
+                                    // Trigger auto-fallback path
+                                    const matchIdx = flatStreams.findIndex(s => s.url === src);
+                                    if (matchIdx !== -1 && matchIdx + 1 < flatStreams.length) {
+                                        const next = flatStreams[matchIdx + 1];
+                                        console.warn(`HLS fatal error. Fallback to stream #${matchIdx + 2} (${next.provider})`);
+                                        hlsInstance.destroy();
+                                        playStream(next.provider, next.index);
+                                    } else {
+                                        console.error("All streams exhausted.");
+                                    }
+                                }
+                            });
+
+                            hlsInstance.loadSource(src);
+                            hlsInstance.attachMedia(video);
+                        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            video.src = src;
+                        }
+                    }
+                };
+            }
+
+            artInstance = new Artplayer(config);
+        }
+
+        // Run
+        triggerSearch();
+    </script>
+</body>
+</html>
