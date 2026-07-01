@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moovie Embed — The Ultimate Streaming & Resolver API Docs</title>
+    <title>Moovie Embed — Universal HLS Resolver & Player Docs</title>
     
     <!-- Premium Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@
             overflow-x: hidden;
         }
 
-        /* ── Fullscreen Embed Player Mode (Active in Iframes) ── */
+        /* ── Fullscreen Embed Player Mode (Active inside Iframes) ── */
         .embed-stage {
             position: fixed;
             inset: 0;
@@ -569,6 +569,40 @@
             font-family: var(--font-mono);
             color: var(--ember);
             font-weight: 600;
+        }
+
+        /* ── Artplayer Premium Styling & Modern Overrides ── */
+        .art-video-player {
+            border-radius: inherit;
+        }
+        .art-poster {
+            border-radius: inherit;
+        }
+        .art-mask {
+            border-radius: inherit;
+            pointer-events: auto !important; /* Ensure click-to-pause works */
+        }
+        .art-control-grabber {
+            background-color: var(--ember) !important;
+        }
+        .art-control-bar {
+            background: rgba(11, 10, 8, 0.75) !important;
+            backdrop-filter: blur(10px) saturate(1.2);
+            border-top: 1px solid var(--rule) !important;
+            height: 52px !important;
+            padding: 0 16px !important;
+        }
+        .art-slider-hightlight {
+            background: var(--ember) !important;
+        }
+        .art-slider-hover {
+            background: rgba(255, 90, 31, 0.3) !important;
+        }
+        .art-slider-loaded {
+            background: rgba(255, 255, 255, 0.12) !important;
+        }
+        .art-control:hover {
+            color: var(--ember) !important;
         }
     </style>
 </head>
@@ -1090,6 +1124,7 @@
                 miniProgressBar: true,
                 setting: true,
                 theme: '#ff5a1f',
+                clickToPlay: true, /* Explicitly enable screen clicking to toggle pause/play */
             };
 
             if (isM3u8 && window.Hls) {
@@ -1126,6 +1161,8 @@
         }
 
         // ── Sandbox Tester View Logic ──
+        toggleTvInputs();
+
         function toggleTvInputs() {
             const type = document.getElementById('sandboxType').value;
             document.getElementById('tvParams').style.display = type === 'tv' ? 'flex' : 'none';
