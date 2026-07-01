@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moovie Embed — Standalone Resolver & Player Docs</title>
+    <title>Moovie Embed — The Ultimate Streaming & Resolver API Docs</title>
     
     <!-- Premium Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,10 +18,11 @@
     <style>
         :root {
             --bg: #0b0a08;
+            --ink-800: #191816;
             --bg-glass: rgba(26, 26, 36, 0.65);
             --bg-card: #15141b;
             --rule: rgba(255, 255, 255, 0.08);
-            --rule-glow: rgba(255, 255, 255, 0.15);
+            --rule-strong: rgba(255, 255, 255, 0.15);
             --ember: #ff5a1f;
             --ember-glow: rgba(255, 90, 31, 0.25);
             --purple: #818cf8;
@@ -52,7 +53,7 @@
             overflow-x: hidden;
         }
 
-        /* ── Fullscreen Embed Player Mode ── */
+        /* ── Fullscreen Embed Player Mode (Active in Iframes) ── */
         .embed-stage {
             position: fixed;
             inset: 0;
@@ -108,9 +109,9 @@
         }
 
         .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(255, 255, 255, 0.05);
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--rule-strong);
             border-top-color: var(--ember);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -223,18 +224,17 @@
             letter-spacing: 0.02em;
         }
 
-        .guide-hero {
+        .guide-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 48px 24px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.1fr 0.9fr;
             gap: 48px;
-            align-items: center;
         }
 
         @media (max-width: 1024px) {
-            .guide-hero {
+            .guide-container {
                 grid-template-columns: 1fr;
                 padding: 32px 20px;
                 gap: 32px;
@@ -258,7 +258,7 @@
             margin-bottom: 24px;
         }
 
-        /* Sandbox Player Container */
+        /* ── Sandbox Player Component (Watchable Aesthetics) ── */
         .sandbox-box {
             background: var(--bg-card);
             border: 1px solid var(--rule);
@@ -267,12 +267,76 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
+            position: sticky;
+            top: 100px;
         }
 
         .sandbox-player-frame {
+            position: relative;
             aspect-ratio: 16 / 9;
             background: #000;
-            position: relative;
+        }
+
+        /* Shimmering Skeleton (Match watchable site) */
+        .player-frame__skeleton {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 70%) var(--ink-800);
+            background-size: 220% 100%;
+            animation: shimmer 2.4s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Call-To-Action placeholder inside video container */
+        .sandbox-placeholder {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            background: radial-gradient(circle at center, rgba(30, 29, 39, 0.98) 0%, rgba(11, 10, 8, 1) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            transition: opacity 0.3s;
+        }
+
+        .btn-cta-launch {
+            background: var(--ember);
+            color: #000;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--r-pill);
+            cursor: pointer;
+            box-shadow: 0 4px 20px var(--ember-glow), 0 0 0 0 rgba(255, 90, 31, 0.4);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: pulse-border 2s infinite;
+        }
+
+        .btn-cta-launch:hover {
+            transform: translateY(-2px) scale(1.03);
+            background: #ff723f;
+            box-shadow: 0 6px 24px var(--ember-glow);
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 4px 20px var(--ember-glow), 0 0 0 0 rgba(255, 90, 31, 0.4); }
+            70% { box-shadow: 0 4px 20px var(--ember-glow), 0 0 0 12px rgba(255, 90, 31, 0); }
+            100% { box-shadow: 0 4px 20px var(--ember-glow), 0 0 0 0 rgba(255, 90, 31, 0); }
+        }
+
+        .placeholder-text {
+            font-size: 0.85rem;
+            color: var(--bone-muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .sandbox-controls {
@@ -281,6 +345,7 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 16px;
+            background: #0f0e13;
         }
 
         .control-row {
@@ -293,6 +358,7 @@
             position: relative;
             display: flex;
             align-items: center;
+            flex: 1;
         }
 
         .input-text {
@@ -313,19 +379,20 @@
         }
 
         .btn-resolve {
-            background: var(--ember);
-            color: #000;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--rule);
+            color: var(--bone);
             font-weight: 600;
             padding: 10px 20px;
-            border: none;
             border-radius: var(--r-md);
             cursor: pointer;
             font-family: var(--font-sans);
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
         .btn-resolve:hover {
-            background: #ff723f;
+            background: rgba(255,255,255,0.1);
+            border-color: var(--bone-dim);
         }
 
         /* Suggestion box */
@@ -414,13 +481,6 @@
         }
 
         /* ── Documentation Section ── */
-        .guide-docs {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 48px 24px;
-            border-top: 1px solid var(--rule);
-        }
-
         .doc-section {
             margin-bottom: 40px;
         }
@@ -432,6 +492,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--bone);
         }
 
         .doc-section h2::before {
@@ -513,7 +574,7 @@
 </head>
 <body>
 
-    <!-- ── FULLSCREEN EMBED MODE (Iframe view) ── -->
+    <!-- ── FULLSCREEN EMBED PLAYER MODE (Active inside Iframes) ── -->
     <div id="embedStage" class="embed-stage">
         <div class="player-viewport">
             <div id="embedHud" class="hud-chrome">
@@ -531,7 +592,7 @@
             <div id="artplayer-embed" class="artplayer-container"></div>
 
             <div id="embedLoading" class="overlay">
-                <div class="overlay-glow"></div>
+                <div class="player-frame__skeleton"></div>
                 <div class="spinner"></div>
                 <h4 class="loading-title">Scraping Sub-Servers</h4>
                 <p id="embedLoadingSub" class="loading-subtitle">Contacting API endpoint...</p>
@@ -561,8 +622,8 @@
         <header class="guide-header">
             <div class="header-inner">
                 <div class="logo-wrap">
-                    <div class="logo-badge">Player</div>
-                    <span class="logo-title">Moovie Resolver</span>
+                    <div class="logo-badge">Embed</div>
+                    <span class="logo-title">Moovie Resolver Docs</span>
                 </div>
                 <div>
                     <a href="https://github.com/iMayhem/moovie-embed" target="_blank" class="hud-btn" style="text-decoration: none;">
@@ -572,115 +633,162 @@
             </div>
         </header>
 
-        <section class="guide-hero">
-            <div class="hero-desc">
-                <h1>Universal HLS Embed Player for Moovie</h1>
-                <p>An elite, resilient resolver engine. Resolves movie and TV content directly from multiple background sub-servers (Iron, Spider, Wolf, Multi, Dark) with auto-failover stream cycling.</p>
-                <p>Simply use the iframe generator below or add query parameters to embed it instantly on any streaming or indexing platform.</p>
-            </div>
+        <div class="guide-container">
+            
+            <!-- Left Column: Detailed Documentation Guide (Like Peachify) -->
+            <div class="guide-left">
+                <div class="hero-desc">
+                    <h1>Empower your streaming site with our embed player.</h1>
+                    <p>Built for seamless integration, smart parallel sub-server fallbacks (Iron, Spider, Wolf, Multi, Dark), and total player control.</p>
+                </div>
 
-            <!-- Interactive Sandbox Tester -->
-            <div class="sandbox-box">
-                <div class="sandbox-player-frame">
-                    <div id="artplayer-sandbox" class="artplayer-container"></div>
-                    
-                    <div id="sandboxLoading" class="overlay">
-                        <div class="overlay-glow"></div>
-                        <div class="spinner"></div>
-                        <h4 class="loading-title">Resolving Sandbox Streams</h4>
-                        <p id="sandboxLoadingSub" class="loading-subtitle">Standing by...</p>
-                    </div>
-
-                    <div id="sandboxError" class="overlay hidden">
-                        <h4 class="error-title">No Streams Found</h4>
-                        <p id="sandboxErrorDesc" class="error-desc">Scraper failed to pull streams for this search query.</p>
+                <div class="doc-section">
+                    <h2>Embed Movies</h2>
+                    <p>TMDB or IMDb ID is accepted. TMDB IDs are highly recommended, but IMDb IDs also work as long as you keep the <code>tt</code> prefix.</p>
+                    <div class="code-block">
+                        https://moovie-embed.pages.dev/embed/movie/{tmdb_id}
                     </div>
                 </div>
 
-                <div class="sandbox-controls">
-                    <div class="control-row">
-                        <div class="search-input-wrap">
-                            <input type="text" id="sandboxSearch" class="input-text" placeholder="Type Title (e.g. Interstellar, Batman)..." autocomplete="off" oninput="onSuggestInput()" onkeydown="onSuggestKeydown(event)">
-                            <div id="suggestBox" class="suggest-box" style="display: none;"></div>
+                <div class="doc-section">
+                    <h2>Embed Shows</h2>
+                    <p>TMDB or IMDb ID is accepted. For shows, Season and Episode parameters are required inside the path structure.</p>
+                    <div class="code-block">
+                        https://moovie-embed.pages.dev/embed/tv/{tmdb_id}/{season}/{episode}
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h2>01. Integration Code</h2>
+                    <p>Copy and drop these standard iframe snippets directly into your HTML structure:</p>
+                    <div class="code-block">
+                        <button class="code-copy" onclick="copySnippet('iframeMovie')">Copy</button>
+                        <span id="iframeMovie">&lt;!-- Movie --&gt;
+&lt;iframe src="https://moovie-embed.pages.dev/embed/movie/157336" width="100%" height="100%" frameborder="0" style="border-radius: 12px;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen&gt;&lt;/iframe&gt;</span>
+                    </div>
+                    <div class="code-block" style="margin-top: 12px;">
+                        <button class="code-copy" onclick="copySnippet('iframeTv')">Copy</button>
+                        <span id="iframeTv">&lt;!-- TV Series --&gt;
+&lt;iframe src="https://moovie-embed.pages.dev/embed/tv/76479/1/1" width="100%" height="100%" frameborder="0" style="border-radius: 12px;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen&gt;&lt;/iframe&gt;</span>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h2>02. Query Parameters Reference</h2>
+                    <table class="params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                                <th>Syntax</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="param-name">tmdb_id</td>
+                                <td>Direct TMDB ID search. Skips internal title lookup entirely.</td>
+                                <td><code>?tmdb_id=157336</code></td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">title</td>
+                                <td>Search query fallback if ID is missing.</td>
+                                <td><code>?title=Interstellar</code></td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">fast</td>
+                                <td>Enables rapid scraping mode on the API backend.</td>
+                                <td><code>?fast=1</code></td>
+                            </tr>
+                            <tr>
+                                <td class="param-name">media_type</td>
+                                <td>Tells lookup search if it is a <code>movie</code> or <code>tv</code>.</td>
+                                <td><code>?media_type=movie</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="doc-section">
+                    <h2>Integrate with AI</h2>
+                    <p>Building a custom portal? Copy this markdown block and paste it directly into Cursor or ChatGPT to generate your integration component instantly:</p>
+                    <div class="code-block" style="color: #60a5fa;">
+                        <button class="code-copy" onclick="copySnippet('aiPrompt')">Copy Prompt</button>
+                        <span id="aiPrompt">I am building a movie streaming website and I want to embed the Moovie Embed player via an iframe. Please write the integration code for me based on the following API reference. I want a robust component/script that passes the correct parameters to the URL.
+
+### 1. Base URLs:
+- Movies: `https://moovie-embed.pages.dev/embed/movie/{tmdb_id}`
+- TV Series: `https://moovie-embed.pages.dev/embed/tv/{tmdb_id}/{season}/{episode}`
+
+### 2. Supported Parameters:
+- `fast`: Pass `1` to enable fast background resolver queries.
+- `title`: Name of the movie/TV show used as matching query metadata.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Sandbox (Stays fixed) -->
+            <div class="guide-right">
+                <div class="sandbox-box">
+                    <div class="sandbox-player-frame">
+                        <!-- Shimmering skeleton wrapper -->
+                        <div id="sandboxShimmer" class="player-frame__skeleton" style="display: none;"></div>
+                        
+                        <!-- Interactive Artplayer Target -->
+                        <div id="artplayer-sandbox" class="artplayer-container"></div>
+                        
+                        <!-- Launch Sandbox Cover overlay -->
+                        <div id="sandboxPlaceholder" class="sandbox-placeholder">
+                            <button class="btn-cta-launch" onclick="launchSandboxPlayer()">Test Video Player</button>
+                            <span class="placeholder-text">Click to load active stream sandbox</span>
                         </div>
-                        <button class="btn-resolve" onclick="resolveSandbox()">Test Resolve</button>
+
+                        <!-- Custom Loading overlay -->
+                        <div id="sandboxLoading" class="overlay hidden">
+                            <div class="spinner"></div>
+                            <h4 class="loading-title">Resolving Sandbox Streams</h4>
+                            <p id="sandboxLoadingSub" class="loading-subtitle">Standing by...</p>
+                        </div>
+
+                        <!-- Error feedback overlay -->
+                        <div id="sandboxError" class="overlay hidden">
+                            <h4 class="error-title">No Streams Found</h4>
+                            <p id="sandboxErrorDesc" class="error-desc">Scraper failed to pull streams for this search query.</p>
+                        </div>
                     </div>
 
-                    <div class="media-row">
-                        <label class="label-select">
-                            <span>Type</span>
-                            <select id="sandboxType" class="select-ui" onchange="toggleTvInputs()">
-                                <option value="movie">Movie</option>
-                                <option value="tv">TV Show</option>
-                            </select>
-                        </label>
-                        <div id="tvParams" style="display: none; gap: 8px; align-items: center;">
+                    <div class="sandbox-controls">
+                        <div class="control-row">
+                            <div class="search-input-wrap">
+                                <input type="text" id="sandboxSearch" class="input-text" placeholder="Type Title (e.g. Interstellar, Batman)..." autocomplete="off" oninput="onSuggestInput()" onkeydown="onSuggestKeydown(event)">
+                                <div id="suggestBox" class="suggest-box" style="display: none;"></div>
+                            </div>
+                            <button class="btn-resolve" onclick="resolveSandbox()">Update Query</button>
+                        </div>
+
+                        <div class="media-row">
                             <label class="label-select">
-                                <span>S</span>
-                                <input type="number" id="sandboxSeason" class="number-input" value="1" min="1">
+                                <span>Type</span>
+                                <select id="sandboxType" class="select-ui" onchange="toggleTvInputs()">
+                                    <option value="movie">Movie</option>
+                                    <option value="tv">TV Show</option>
+                                </select>
                             </label>
-                            <label class="label-select">
-                                <span>E</span>
-                                <input type="number" id="sandboxEpisode" class="number-input" value="1" min="1">
-                            </label>
+                            <div id="tvParams" style="display: none; gap: 8px; align-items: center;">
+                                <label class="label-select">
+                                    <span>S</span>
+                                    <input type="number" id="sandboxSeason" class="number-input" value="1" min="1">
+                                </label>
+                                <label class="label-select">
+                                    <span>E</span>
+                                    <input type="number" id="sandboxEpisode" class="number-input" value="1" min="1">
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- Documentation Guide Section -->
-        <section class="guide-docs">
-            <div class="doc-section">
-                <h2>Embedding Iframe Generator</h2>
-                <p>Deploy this template and drop the code below into your site. Use any of the query configurations to filter or bypass selectors.</p>
-                <div class="code-block">
-                    <button class="code-copy" onclick="copySnippet()">Copy</button>
-                    <span id="iframeSnippet">&lt;iframe src="https://moovie-embed.pages.dev/?tmdb_id=157336" width="100%" height="450" frameborder="0" allowfullscreen&gt;&lt;/iframe&gt;</span>
-                </div>
-            </div>
-
-            <div class="doc-section">
-                <h2>Query Parameters Reference</h2>
-                <p>Customize the player behavior by appending these parameters to the URL:</p>
-                <table class="params-table">
-                    <thead>
-                        <tr>
-                            <th>Parameter</th>
-                            <th>Description</th>
-                            <th>Value Example</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="param-name">tmdb_id</td>
-                            <td>Exact TMDB ID to skip database title lookup (Recommended).</td>
-                            <td><code>157336</code> (Interstellar)</td>
-                        </tr>
-                        <tr>
-                            <td class="param-name">title</td>
-                            <td>Title string query used as lookup fallback.</td>
-                            <td><code>The+Batman</code></td>
-                        </tr>
-                        <tr>
-                            <td class="param-name">season</td>
-                            <td>TV series season number (omitted or 0 for movies).</td>
-                            <td><code>1</code></td>
-                        </tr>
-                        <tr>
-                            <td class="param-name">episode</td>
-                            <td>TV series episode number (omitted or 0 for movies).</td>
-                            <td><code>1</code></td>
-                        </tr>
-                        <tr>
-                            <td class="param-name">media_type</td>
-                            <td>Helps speed up TMDB search queries.</td>
-                            <td><code>movie</code> or <code>tv</code></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        </div>
 
     </div>
 
@@ -707,30 +815,59 @@
         let activeIndex = 0;
         let loaderInterval = null;
 
-        // Autocomplete autocomplete Suggest state
+        // Autocomplete Suggest state
         let suggestTimer = null;
         let selectedSuggestTmdbId = null;
         let selectedSuggestType = null;
 
-        // Parse search query
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasParams = urlParams.has('title') || urlParams.has('tmdb_id');
+        // SPA Path Parsing (Handles /embed/movie/:id or /embed/tv/:id/:s/:e)
+        const path = window.location.pathname;
+        const queryParams = new URLSearchParams(window.location.search);
+        let parseMatch = false;
 
-        if (hasParams) {
+        let embedMediaType = "";
+        let embedMediaId = "";
+        let embedSeason = 0;
+        let embedEpisode = 0;
+
+        // Regex routes
+        const movieRegex = /^\/embed\/movie\/([^/]+)/i;
+        const tvRegex = /^\/embed\/tv\/([^/]+)\/([^/]+)\/([^/]+)/i;
+
+        const mMatch = path.match(movieRegex);
+        const tMatch = path.match(tvRegex);
+
+        if (mMatch) {
+            parseMatch = true;
+            embedMediaType = "movie";
+            embedMediaId = mMatch[1];
+        } else if (tMatch) {
+            parseMatch = true;
+            embedMediaType = "tv";
+            embedMediaId = tMatch[1];
+            embedSeason = parseInt(tMatch[2]) || 1;
+            embedEpisode = parseInt(tMatch[3]) || 1;
+        }
+
+        // Fallback checks for query parameters (for backward compatibility)
+        if (!parseMatch && (queryParams.has('title') || queryParams.has('tmdb_id'))) {
+            parseMatch = true;
+            embedMediaId = queryParams.get('tmdb_id') || "";
+            embedMediaType = queryParams.get('media_type') || "movie";
+            embedSeason = parseInt(queryParams.get('season')) || 0;
+            embedEpisode = parseInt(queryParams.get('episode')) || 0;
+        }
+
+        if (parseMatch) {
             // Activate Fullscreen Embed Mode
             document.getElementById('embedStage').classList.add('active');
             document.getElementById('guideStage').classList.add('hidden');
             
-            // Populate HUD
-            const title = urlParams.get('title') || 'Resolving Media';
-            const season = parseInt(urlParams.get('season')) || 0;
-            const episode = parseInt(urlParams.get('episode')) || 0;
-            document.getElementById('embedTitle').innerText = title + (season > 0 ? ` (S${season}E${episode})` : "");
+            // Populate HUD title
+            const displayTitle = queryParams.get('title') || `TMDB: ${embedMediaId}`;
+            document.getElementById('embedTitle').innerText = displayTitle + (embedSeason > 0 ? ` (S${embedSeason}E${embedEpisode})` : "");
             
             triggerEmbedScrape();
-        } else {
-            // Standard Guide mode: Init fallback load (Interstellar)
-            resolveSandbox();
         }
 
         // ── Fullscreen Iframe Scrape & Play Logic ──
@@ -780,23 +917,19 @@
             showEmbedLoading(true);
             destroyPlayer();
 
-            const title = urlParams.get('title');
-            const tmdbId = urlParams.get('tmdb_id');
-            const mediaType = urlParams.get('media_type');
-            const season = parseInt(urlParams.get('season')) || 0;
-            const episode = parseInt(urlParams.get('episode')) || 0;
-            const fast = urlParams.get('fast') === '1' ? '1' : '';
+            const title = queryParams.get('title') || '';
+            const fast = queryParams.get('fast') === '1' ? '1' : '';
 
             const params = {};
-            if (tmdbId) {
-                params.tmdb_id = tmdbId;
+            if (embedMediaId) {
+                params.tmdb_id = embedMediaId;
                 params.title = title || 'Media';
-                if (mediaType) params.media_type = mediaType;
+                if (embedMediaType) params.media_type = embedMediaType;
             } else {
                 params.title = title;
             }
-            if (season > 0) params.season = season;
-            if (episode > 0) params.episode = episode;
+            if (embedSeason > 0) params.season = embedSeason;
+            if (embedEpisode > 0) params.episode = embedEpisode;
             if (fast) params.fast = '1';
 
             const qs = new URLSearchParams(params).toString();
@@ -998,6 +1131,15 @@
             document.getElementById('tvParams').style.display = type === 'tv' ? 'flex' : 'none';
         }
 
+        function launchSandboxPlayer() {
+            // Remove cover and start loading
+            document.getElementById('sandboxPlaceholder').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('sandboxPlaceholder').classList.add('hidden');
+                resolveSandbox();
+            }, 300);
+        }
+
         async function resolveSandbox() {
             const query = document.getElementById('sandboxSearch').value.trim() || 'Interstellar';
             const type = document.getElementById('sandboxType').value;
@@ -1005,9 +1147,12 @@
             const episode = parseInt(document.getElementById('sandboxEpisode').value) || 1;
 
             const l = document.getElementById('sandboxLoading');
+            const shim = document.getElementById('sandboxShimmer');
             const errDiv = document.getElementById('sandboxError');
             
+            // Show load overlays
             l.classList.remove('hidden');
+            shim.style.display = 'block';
             errDiv.classList.add('hidden');
             destroyPlayer();
 
@@ -1051,10 +1196,14 @@
                 // Autoplay
                 const firstProv = Object.keys(data)[0];
                 playSelectedStream(firstProv, 0, '#artplayer-sandbox');
+                
+                // Hide load overlays
                 l.classList.add('hidden');
+                shim.style.display = 'none';
             } catch (err) {
                 console.error(err);
                 l.classList.add('hidden');
+                shim.style.display = 'none';
                 errDiv.classList.remove('hidden');
                 document.getElementById('sandboxErrorDesc').innerText = err.message || "Failed to resolve stream.";
             } finally {
@@ -1110,7 +1259,11 @@
                             toggleTvInputs();
 
                             suggestBox.style.display = 'none';
-                            resolveSandbox();
+                            
+                            // If placeholder has already been dismissed, auto-resolve immediately
+                            if (document.getElementById('sandboxPlaceholder').classList.contains('hidden')) {
+                                resolveSandbox();
+                            }
                         });
 
                         suggestBox.appendChild(btn);
@@ -1131,14 +1284,18 @@
         function onSuggestKeydown(e) {
             if (e.key === 'Enter') {
                 document.getElementById('suggestBox').style.display = 'none';
-                resolveSandbox();
+                if (document.getElementById('sandboxPlaceholder').classList.contains('hidden')) {
+                    resolveSandbox();
+                } else {
+                    launchSandboxPlayer();
+                }
             }
         }
 
-        function copySnippet() {
-            const text = document.getElementById('iframeSnippet').innerText;
+        function copySnippet(id) {
+            const text = document.getElementById(id).innerText;
             navigator.clipboard.writeText(text);
-            alert("Embedded iframe code copied to clipboard!");
+            alert("Copied snippet to clipboard!");
         }
     </script>
 </body>
